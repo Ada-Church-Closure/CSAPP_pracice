@@ -354,29 +354,29 @@ Disassembly of section .text:
   400efb:	c3                   	ret    
 
 0000000000400efc <phase_2>:
-  400efc:	55                   	push   %rbp
-  400efd:	53                   	push   %rbx
+  400efc:	55                   	push   %rbp ;一個循環中，我們用兩個callee寄存器存放兩個局部變量
+  400efd:	53                   	push   %rbx ;這裏rbp用來存儲上限，rbx就是index
   400efe:	48 83 ec 28          	sub    $0x28,%rsp
-  400f02:	48 89 e6             	mov    %rsp,%rsi
-  400f05:	e8 52 05 00 00       	call   40145c <read_six_numbers>
-  400f0a:	83 3c 24 01          	cmpl   $0x1,(%rsp)
-  400f0e:	74 20                	je     400f30 <phase_2+0x34>
+  400f02:	48 89 e6             	mov    %rsp,%rsi  ;爲什麼用rsi存放這裏棧指針的值？
+  400f05:	e8 52 05 00 00       	call   40145c <read_six_numbers> ;讀入六個數字，這些數字應該有怎樣的分佈？
+  400f0a:	83 3c 24 01          	cmpl   $0x1,(%rsp)  ;看第一個數字是不是1
+  400f0e:	74 20                	je     400f30 <phase_2+0x34>  ;是1到30位置，不是爆炸
   400f10:	e8 25 05 00 00       	call   40143a <explode_bomb>
   400f15:	eb 19                	jmp    400f30 <phase_2+0x34>
-  400f17:	8b 43 fc             	mov    -0x4(%rbx),%eax
-  400f1a:	01 c0                	add    %eax,%eax
-  400f1c:	39 03                	cmp    %eax,(%rbx)
-  400f1e:	74 05                	je     400f25 <phase_2+0x29>
+  400f17:	8b 43 fc             	mov    -0x4(%rbx),%eax  ;暫時把數字存放在eax中
+  400f1a:	01 c0                	add    %eax,%eax  ;倍增eax
+  400f1c:	39 03                	cmp    %eax,(%rbx)  ;看後一個數字是不是前一個的2倍
+  400f1e:	74 05                	je     400f25 <phase_2+0x29>  ;不相等就爆炸
   400f20:	e8 15 05 00 00       	call   40143a <explode_bomb>
-  400f25:	48 83 c3 04          	add    $0x4,%rbx
-  400f29:	48 39 eb             	cmp    %rbp,%rbx
+  400f25:	48 83 c3 04          	add    $0x4,%rbx  ;相等增加並且比較是否到了循環的終止條件
+  400f29:	48 39 eb             	cmp    %rbp,%rbx  ;相等的話，就結束循環
   400f2c:	75 e9                	jne    400f17 <phase_2+0x1b>
   400f2e:	eb 0c                	jmp    400f3c <phase_2+0x40>
-  400f30:	48 8d 5c 24 04       	lea    0x4(%rsp),%rbx
-  400f35:	48 8d 6c 24 18       	lea    0x18(%rsp),%rbp
+  400f30:	48 8d 5c 24 04       	lea    0x4(%rsp),%rbx   ;這兩行代碼相當於是for循環的初始化，rbp是循環上限
+  400f35:	48 8d 6c 24 18       	lea    0x18(%rsp),%rbp  ;rbx是循環變量遞增
   400f3a:	eb db                	jmp    400f17 <phase_2+0x1b>
-  400f3c:	48 83 c4 28          	add    $0x28,%rsp
-  400f40:	5b                   	pop    %rbx
+  400f3c:	48 83 c4 28          	add    $0x28,%rsp ;恢復棧
+  400f40:	5b                   	pop    %rbx ;恢復指針
   400f41:	5d                   	pop    %rbp
   400f42:	c3                   	ret    
 
@@ -801,17 +801,17 @@ Disassembly of section .text:
   401452:	bf 08 00 00 00       	mov    $0x8,%edi
   401457:	e8 c4 f7 ff ff       	call   400c20 <exit@plt>
 
-000000000040145c <read_six_numbers>:
-  40145c:	48 83 ec 18          	sub    $0x18,%rsp
-  401460:	48 89 f2             	mov    %rsi,%rdx
-  401463:	48 8d 4e 04          	lea    0x4(%rsi),%rcx
-  401467:	48 8d 46 14          	lea    0x14(%rsi),%rax
-  40146b:	48 89 44 24 08       	mov    %rax,0x8(%rsp)
+000000000040145c <read_six_numbers>:  ;rdi就是main中我們readline中的字符串，不用作爲一個參數傳入，真正寫的就7個
+  40145c:	48 83 ec 18          	sub    $0x18,%rsp ;這裏-18應該是爲了sscanf的調用準備，給多餘的參數預留位置，因爲它有8個參數，多餘的從多餘的位置從右至左依次放在棧頂部
+  401460:	48 89 f2             	mov    %rsi,%rdx ;之前保存了棧指針的值，就有了作用，第四個參數在底部
+  401463:	48 8d 4e 04          	lea    0x4(%rsi),%rcx ;第五個參數
+  401467:	48 8d 46 14          	lea    0x14(%rsi),%rax  ;在棧頂放多餘的兩個參數
+  40146b:	48 89 44 24 08       	mov    %rax,0x8(%rsp)   ;不能直接移動內存，把rax作爲一個跳板
   401470:	48 8d 46 10          	lea    0x10(%rsi),%rax
   401474:	48 89 04 24          	mov    %rax,(%rsp)
-  401478:	4c 8d 4e 0c          	lea    0xc(%rsi),%r9
-  40147c:	4c 8d 46 08          	lea    0x8(%rsi),%r8
-  401480:	be c3 25 40 00       	mov    $0x4025c3,%esi
+  401478:	4c 8d 4e 0c          	lea    0xc(%rsi),%r9  ;第七個參數
+  40147c:	4c 8d 46 08          	lea    0x8(%rsi),%r8  ;第六個參數
+  401480:	be c3 25 40 00       	mov    $0x4025c3,%esi ;第二個參數就是讀入的格式，很多“%d”
   401485:	b8 00 00 00 00       	mov    $0x0,%eax
   40148a:	e8 61 f7 ff ff       	call   400bf0 <__isoc99_sscanf@plt>
   40148f:	83 f8 05             	cmp    $0x5,%eax

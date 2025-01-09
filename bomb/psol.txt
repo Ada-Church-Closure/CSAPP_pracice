@@ -1,2 +1,4 @@
 Border relations with Canada have never been better.
-878 88 
+1 2 4 8 16 32
+cece
+
